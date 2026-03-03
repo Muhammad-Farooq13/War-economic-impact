@@ -7,7 +7,7 @@ Thank you for considering contributing to the War Economic Impact Predictor!
 ### 1. Fork & Clone
 
 ```bash
-git clone https://github.com/yourusername/war-economic-impact.git
+git clone https://github.com/Muhammad-Farooq-13/war-economic-impact.git
 cd war-economic-impact
 ```
 

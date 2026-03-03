@@ -7,9 +7,9 @@ setup(
         "ML pipeline to predict the economic impact of armed conflicts "
         "using pre-war indicators and conflict characteristics."
     ),
-    author="Your Name",
-    author_email="your.email@example.com",
-    url="https://github.com/yourusername/war-economic-impact",
+    author="Muhammad Farooq",
+    author_email="mfarooqshafee333@gmail.com",
+    url="https://github.com/Muhammad-Farooq-13/war-economic-impact",
     license="MIT",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
