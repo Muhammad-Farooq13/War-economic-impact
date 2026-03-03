@@ -9,7 +9,7 @@ setup(
     ),
     author="Muhammad Farooq",
     author_email="mfarooqshafee333@gmail.com",
-    url="https://github.com/Muhammad-Farooq-13/war-economic-impact",
+    url="https://github.com/Muhammad-Farooq13/War-economic-impact",
     license="MIT",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
