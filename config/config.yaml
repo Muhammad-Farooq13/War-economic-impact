@@ -1,0 +1,109 @@
+project:
+  name: "War Economic Impact Predictor"
+  version: "1.0.0"
+  description: >
+    Predicts the GDP change (%) and classifies economic severity of armed
+    conflicts using pre-war indicators and conflict characteristics.
+
+paths:
+  raw_data: "data/raw/war_economic_impact_dataset.csv"
+  processed_data: "data/processed/war_economic_processed.parquet"
+  model_dir: "models/"
+  reports_dir: "reports/"
+  figures_dir: "reports/figures/"
+
+data:
+  target_regression: "GDP_Change_%"
+  target_classification: "Severity_Label"        # engineered column
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+
+  categorical_features:
+    - Conflict_Type
+    - Region
+    - Status
+    - Most_Affected_Sector
+    - Black_Market_Activity_Level
+    - War_Profiteering_Documented
+
+  numerical_features:
+    - Pre_War_Unemployment_%
+    - During_War_Unemployment_%
+    - Unemployment_Spike_Percentage_Points
+    - Youth_Unemployment_Change_%
+    - Pre_War_Poverty_Rate_%
+    - During_War_Poverty_Rate_%
+    - Extreme_Poverty_Rate_%
+    - Food_Insecurity_Rate_%
+    - Households_Fallen_Into_Poverty_Estimate
+    - Inflation_Rate_%
+    - Currency_Devaluation_%
+    - Cost_of_War_USD
+    - Estimated_Reconstruction_Cost_USD
+    - Informal_Economy_Size_Pre_War_%
+    - Informal_Economy_Size_During_War_%
+    - Currency_Black_Market_Rate_Gap_%
+    - Conflict_Duration_Years
+
+  drop_features:
+    - Conflict_Name
+    - Primary_Country
+    - Primary_Black_Market_Goods
+    - Start_Year
+    - End_Year
+
+  severity_thresholds:
+    mild: -10          # GDP change > -10%  -> Mild
+    moderate: -25      # -25% <= GDP change <= -10% -> Moderate
+    severe: -50        # -50% <= GDP change < -25% -> Severe
+    # below -50% -> Catastrophic
+
+models:
+  regression:
+    gradient_boosting:
+      n_estimators: 500
+      learning_rate: 0.05
+      max_depth: 5
+      random_state: 42
+    random_forest:
+      n_estimators: 300
+      max_depth: 10
+      random_state: 42
+    ridge:
+      alpha: 1.0
+
+  classification:
+    gradient_boosting:
+      n_estimators: 500
+      learning_rate: 0.05
+      max_depth: 5
+      random_state: 42
+    random_forest:
+      n_estimators: 300
+      max_depth: 10
+      random_state: 42
+    logistic_regression:
+      C: 1.0
+      max_iter: 1000
+      random_state: 42
+
+  cv_folds: 5
+  scoring_regression: "neg_root_mean_squared_error"
+  scoring_classification: "f1_weighted"
+
+  hyperparameter_tuning:
+    enabled: true
+    method: "optuna"          # "optuna" | "grid" | "random"
+    n_trials: 50
+    timeout_seconds: 600
+
+mlflow:
+  tracking_uri: "mlruns"
+  experiment_name: "war_economic_impact"
+  log_artifacts: true
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+  file: "reports/run.log"

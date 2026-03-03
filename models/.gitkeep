@@ -1,0 +1,3 @@
+# This file keeps the folder in git.
+# Trained model artefacts (*.joblib, *.pkl) are gitignored.
+# Run `make train` to generate them locally.

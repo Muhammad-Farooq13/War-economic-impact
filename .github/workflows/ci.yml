@@ -1,0 +1,141 @@
+name: CI – War Economic Impact Predictor
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─── Lint & Format Check ────────────────────────────────────────────────────
+  lint:
+    name: Lint (flake8 + black + isort)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install linting tools
+        run: pip install black isort flake8
+
+      - name: Check formatting (black)
+        run: black src tests app --check --line-length 100
+
+      - name: Check import order (isort)
+        run: isort src tests app --check-only --profile black
+
+      - name: Lint (flake8)
+        run: flake8 src tests app --max-line-length=100 --ignore=E203,W503
+
+  # ─── Test Suite ─────────────────────────────────────────────────────────────
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ -v \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --tb=short
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          fail_ci_if_error: false
+
+  # ─── Data Pipeline Smoke Test ────────────────────────────────────────────────
+  pipeline-smoke:
+    name: Pipeline Smoke Test
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Create sample data (CI stub)
+        run: |
+          python - << 'EOF'
+          import pandas as pd
+          import numpy as np
+          rng = np.random.default_rng(0)
+          n = 500
+          df = pd.DataFrame({
+            "Conflict_Name": [f"C{i}" for i in range(n)],
+            "Conflict_Type": rng.choice(["Civil War","World War"], n),
+            "Region": rng.choice(["Europe","Middle East","South Asia"], n),
+            "Start_Year": rng.integers(1939, 2010, n),
+            "End_Year": rng.integers(2010, 2026, n),
+            "Status": rng.choice(["Ongoing","Resolved"], n),
+            "Primary_Country": [f"Country_{i}" for i in range(n)],
+            "Pre_War_Unemployment_%": rng.uniform(2, 20, n),
+            "During_War_Unemployment_%": rng.uniform(10, 45, n),
+            "Unemployment_Spike_Percentage_Points": rng.uniform(0, 30, n),
+            "Most_Affected_Sector": rng.choice(["Tourism","Construction"], n),
+            "Youth_Unemployment_Change_%": rng.uniform(0, 50, n),
+            "Pre_War_Poverty_Rate_%": rng.uniform(5, 40, n),
+            "During_War_Poverty_Rate_%": rng.uniform(10, 60, n),
+            "Extreme_Poverty_Rate_%": rng.uniform(2, 25, n),
+            "Food_Insecurity_Rate_%": rng.uniform(5, 40, n),
+            "Households_Fallen_Into_Poverty_Estimate": rng.integers(1000, 500000, n),
+            "GDP_Change_%": rng.uniform(-80, 10, n),
+            "Inflation_Rate_%": rng.uniform(5, 200, n),
+            "Currency_Devaluation_%": rng.uniform(0, 500, n),
+            "Cost_of_War_USD": rng.uniform(1e9, 5e11, n),
+            "Estimated_Reconstruction_Cost_USD": rng.uniform(2e9, 1e12, n),
+            "Informal_Economy_Size_Pre_War_%": rng.uniform(10, 50, n),
+            "Informal_Economy_Size_During_War_%": rng.uniform(20, 90, n),
+            "Black_Market_Activity_Level": rng.choice(["Low","Moderate","High","Dominant"], n),
+            "Primary_Black_Market_Goods": rng.choice(["food","fuel"], n),
+            "Currency_Black_Market_Rate_Gap_%": rng.uniform(0, 500, n),
+            "War_Profiteering_Documented": rng.choice(["Yes","No"], n),
+          })
+          import pathlib
+          pathlib.Path("data/raw").mkdir(parents=True, exist_ok=True)
+          df.to_csv("data/raw/war_economic_impact_dataset.csv", index=False)
+          print("Sample data written.")
+          EOF
+
+      - name: Run preprocessing pipeline
+        run: python -m src.data.make_dataset
+
+      - name: Run feature engineering pipeline
+        run: python -m src.features.build_features

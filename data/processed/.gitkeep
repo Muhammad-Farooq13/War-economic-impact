@@ -1,0 +1,3 @@
+# This file keeps the folder in git.
+# Processed parquet files are gitignored — they are fully reproducible.
+# Run `make data` then `make features` to regenerate them.
