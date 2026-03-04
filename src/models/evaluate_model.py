@@ -192,20 +192,32 @@ class ModelEvaluator:
         try:
             X_sc = self.scaler.transform(X_test) if self.scaler else X_test.values
             X_df = pd.DataFrame(X_sc, columns=feature_names)
+            sample = X_df.iloc[:500]  # limit sample size for speed
 
             if hasattr(self.model, "feature_importances_"):
+                # XGBoost, LightGBM, RandomForest — native TreeExplainer
                 explainer = shap.TreeExplainer(self.model)
+                shap_values = explainer.shap_values(sample)
             else:
+                # Ridge, LogReg
                 explainer = shap.LinearExplainer(
                     self.model, X_df, feature_perturbation="interventional"
                 )
+                shap_values = explainer.shap_values(sample)
 
-            shap_values = explainer.shap_values(X_df.iloc[:500])  # sample for speed
+            # For multi-class classifiers LightGBM/RF returns a list of arrays;
+            # use the mean-absolute across classes for the bar summary.
+            import numpy as _np
+            if isinstance(shap_values, list):
+                shap_plot_values = _np.abs(_np.stack(shap_values, axis=0)).mean(axis=0)
+            elif shap_values.ndim == 3:          # XGBoost multi-class (n, feat, classes)
+                shap_plot_values = _np.abs(shap_values).mean(axis=2)
+            else:
+                shap_plot_values = shap_values
 
-            fig, ax = plt.subplots(figsize=(10, 7))
             shap.summary_plot(
-                shap_values,
-                X_df.iloc[:500],
+                shap_plot_values,
+                sample,
                 plot_type="bar",
                 show=False,
                 max_display=15,
@@ -214,6 +226,14 @@ class ModelEvaluator:
             plt.savefig(path, dpi=150, bbox_inches="tight")
             plt.close()
             logger.info(f"Saved SHAP plot → {path}")
+
+            # Also save beeswarm for regression (single-output)
+            if self.task == "regression" and not isinstance(shap_values, list):
+                shap.summary_plot(shap_plot_values, sample, show=False, max_display=15)
+                beeswarm_path = _FIG_DIR / f"shap_beeswarm_{self.model_key}.png"
+                plt.savefig(beeswarm_path, dpi=150, bbox_inches="tight")
+                plt.close()
+                logger.info(f"Saved SHAP beeswarm → {beeswarm_path}")
         except Exception as exc:
             logger.warning(f"SHAP plot skipped: {exc}")
 

@@ -332,11 +332,11 @@ def main() -> None:
 
         fig_dir = ROOT / cfg["paths"]["figures_dir"]
 
-        shap_bar = fig_dir / "shap_global_bar.png"
-        shap_bee = fig_dir / "shap_beeswarm.png"
-        reg_eval = fig_dir / "regression_evaluation.png"
-        conf_mat = fig_dir / "confusion_matrix_xgb.png"
-        fi_reg   = fig_dir / "feature_importance_regression.png"
+        shap_bar = fig_dir / "shap_regression_xgb.png"
+        shap_bee = fig_dir / "shap_beeswarm_xgb.png"
+        reg_eval = fig_dir / "regression_xgb.png"
+        conf_mat = fig_dir / "confusion_xgb.png"
+        fi_reg   = fig_dir / "shap_classification_xgb.png"
 
         def show_img(path, caption):
             if path.exists():
@@ -346,17 +346,17 @@ def main() -> None:
 
         col1, col2 = st.columns(2)
         with col1:
-            show_img(reg_eval, "Actual vs Predicted GDP Change")
+            show_img(reg_eval, "Actual vs Predicted GDP Change — XGBoost")
         with col2:
-            show_img(conf_mat, "Confusion Matrix – Severity Classifier")
+            show_img(conf_mat, "Confusion Matrix — Severity Classifier (XGBoost)")
 
         col3, col4 = st.columns(2)
         with col3:
-            show_img(shap_bar, "SHAP Global Feature Importance")
+            show_img(shap_bar, "SHAP Global Feature Importance (Regression)")
         with col4:
             show_img(shap_bee, "SHAP Beeswarm Plot")
 
-        show_img(fi_reg, "Feature Importance – Gradient Boosting Regressor")
+        show_img(fi_reg, "SHAP Feature Importance — XGBoost Classifier")
 
         st.markdown(
             """
@@ -373,6 +373,11 @@ def main() -> None:
             # 3. Launch this app
             make app
             ```
+
+            **Models trained:** XGBoost · LightGBM · Random Forest · Ridge / Logistic Regression  
+            **Tuning:** Optuna (50 trials, XGBoost)  
+            **Tracking:** MLflow @ `http://localhost:5001`  
+            **Explainability:** SHAP TreeExplainer (global bar + beeswarm)
             """
         )
 

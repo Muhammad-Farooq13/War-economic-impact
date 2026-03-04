@@ -1,4 +1,78 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "war-economic-impact"
+version = "1.0.0"
+description = "End-to-end ML pipeline predicting GDP impact of armed conflicts — regression & severity classification on 100k+ records with XGBoost, LightGBM, Optuna, MLflow, SHAP, and Streamlit."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Muhammad Farooq", email = "mfarooqshafee333@gmail.com" }]
+keywords = [
+  "machine-learning", "conflict-economics", "xgboost", "lightgbm",
+  "shap", "mlflow", "optuna", "streamlit", "data-science", "mlops",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "numpy>=1.26.0",
+  "pandas>=2.2.0",
+  "pyarrow>=15.0.0",
+  "scikit-learn>=1.4.0",
+  "xgboost>=2.0.0",
+  "lightgbm>=4.3.0",
+  "optuna>=3.6.0",
+  "mlflow>=2.11.0",
+  "matplotlib>=3.8.0",
+  "seaborn>=0.13.0",
+  "plotly>=5.20.0",
+  "streamlit>=1.33.0",
+  "pyyaml>=6.0",
+  "python-dotenv>=1.0.0",
+  "joblib>=1.3.0",
+  "loguru>=0.7.0",
+  "shap>=0.45.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Muhammad-Farooq13/War-economic-impact"
+Repository = "https://github.com/Muhammad-Farooq13/War-economic-impact"
+Issues = "https://github.com/Muhammad-Farooq13/War-economic-impact/issues"
+
+[project.scripts]
+war-pipeline = "src.data.make_dataset:main"
+war-train = "src.models.train_model:main"
+war-evaluate = "src.models.evaluate_model:main"
+war-predict = "src.models.predict_model:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
 filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_return_any = true
+warn_unused_configs = true

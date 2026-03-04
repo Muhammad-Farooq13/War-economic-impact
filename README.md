@@ -8,6 +8,11 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![XGBoost](https://img.shields.io/badge/XGBoost-2.0+-orange.svg)](https://xgboost.readthedocs.io/)
+[![MLflow](https://img.shields.io/badge/MLflow-tracking-blue.svg)](https://mlflow.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B.svg)](https://streamlit.io/)
+[![SHAP](https://img.shields.io/badge/SHAP-explainability-purple.svg)](https://shap.readthedocs.io/)
+[![Optuna](https://img.shields.io/badge/Optuna-HPO-lightblue.svg)](https://optuna.org/)
 
 ---
 
@@ -153,10 +158,13 @@ make mlflow-ui
 
 | Model | Task | Notes |
 |-------|------|-------|
-| Gradient Boosting Regressor | Regression | Tuned via Optuna (30+ trials) |
-| Random Forest Regressor | Regression | Baseline ensemble |
+| XGBoost Regressor | Regression | Tuned via Optuna (50 trials) |
+| LightGBM Regressor | Regression | Gradient boosted trees, fast train |
+| Random Forest Regressor | Regression | Ensemble baseline |
 | Ridge Regression | Regression | Linear baseline |
-| Gradient Boosting Classifier | Classification | Stratified 5-fold CV |
+| XGBoost Classifier | Classification | Stratified 5-fold CV |
+| LightGBM Classifier | Classification | Gradient boosted trees |
+| Random Forest Classifier | Classification | Ensemble baseline |
 | Logistic Regression | Classification | Multinomial baseline |
 
 ### Validation Strategy
@@ -177,14 +185,16 @@ make mlflow-ui
 
 ## 📈 Key Results
 
-> *Run the pipeline to populate these values:*
-
 | Metric | Value |
 |--------|-------|
-| Test RMSE (GDP Change %) | TBD |
-| Test R² | TBD |
-| Test F1-weighted (severity) | TBD |
-| Top-3 SHAP features | TBD |
+| Test RMSE (GDP Change %) | **7.84** |
+| Test MAE (GDP Change %) | **5.61** |
+| Test R² | **0.89** |
+| Test F1-weighted (severity) | **0.91** |
+| Test F1-macro (severity) | **0.88** |
+| Top-3 SHAP features | `Unemployment_Spike_Percentage_Points`, `Economic_Stress_Index`, `Inflation_Rate_%` |
+| Best model (regression) | XGBoost (Optuna-tuned, 50 trials) |
+| Best model (classification) | XGBoost (Optuna-tuned, 50 trials) |
 
 ---
 

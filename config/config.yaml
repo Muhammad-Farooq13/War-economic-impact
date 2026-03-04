@@ -61,10 +61,18 @@ data:
 
 models:
   regression:
-    gradient_boosting:
+    xgb:
       n_estimators: 500
       learning_rate: 0.05
       max_depth: 5
+      subsample: 0.8
+      colsample_bytree: 0.8
+      random_state: 42
+    lightgbm:
+      n_estimators: 500
+      learning_rate: 0.05
+      max_depth: 5
+      num_leaves: 63
       random_state: 42
     random_forest:
       n_estimators: 300
@@ -74,10 +82,18 @@ models:
       alpha: 1.0
 
   classification:
-    gradient_boosting:
+    xgb:
       n_estimators: 500
       learning_rate: 0.05
       max_depth: 5
+      subsample: 0.8
+      colsample_bytree: 0.8
+      random_state: 42
+    lightgbm:
+      n_estimators: 500
+      learning_rate: 0.05
+      max_depth: 5
+      num_leaves: 63
       random_state: 42
     random_forest:
       n_estimators: 300

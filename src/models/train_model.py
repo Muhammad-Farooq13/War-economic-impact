@@ -22,16 +22,20 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+import lightgbm as lgb
 import mlflow
 import mlflow.sklearn
 import numpy as np
 import optuna
 import pandas as pd
+import xgboost as xgb_lib
 from loguru import logger
-from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    RandomForestRegressor,
+)
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import (
-    classification_report,
     f1_score,
     mean_absolute_error,
     mean_squared_error,
@@ -43,7 +47,6 @@ from sklearn.preprocessing import RobustScaler
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.features.build_features import FeatureEngineer  # noqa: E402
 from src.utils import load_config  # noqa: E402
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -58,12 +61,34 @@ _MLFLOW_CFG = _CFG["mlflow"]
 
 def _build_regression_models() -> dict[str, Any]:
     reg_cfg = _MODEL_CFG["regression"]
+    xgb_p = reg_cfg["xgb"]
+    lgb_p = reg_cfg["lightgbm"]
+    rf_p = reg_cfg["random_forest"]
     return {
-        "xgb": GradientBoostingRegressor(**reg_cfg["gradient_boosting"]),
-        "rf": GradientBoostingRegressor(  # swap for RandomForestRegressor if preferred
-            n_estimators=reg_cfg["random_forest"]["n_estimators"],
-            max_depth=reg_cfg["random_forest"]["max_depth"],
-            random_state=reg_cfg["random_forest"]["random_state"],
+        "xgb": xgb_lib.XGBRegressor(
+            n_estimators=xgb_p["n_estimators"],
+            learning_rate=xgb_p["learning_rate"],
+            max_depth=xgb_p["max_depth"],
+            subsample=xgb_p.get("subsample", 0.8),
+            colsample_bytree=xgb_p.get("colsample_bytree", 0.8),
+            random_state=xgb_p["random_state"],
+            verbosity=0,
+            n_jobs=-1,
+        ),
+        "lgbm": lgb.LGBMRegressor(
+            n_estimators=lgb_p["n_estimators"],
+            learning_rate=lgb_p["learning_rate"],
+            max_depth=lgb_p["max_depth"],
+            num_leaves=lgb_p.get("num_leaves", 63),
+            random_state=lgb_p["random_state"],
+            n_jobs=-1,
+            verbose=-1,
+        ),
+        "rf": RandomForestRegressor(
+            n_estimators=rf_p["n_estimators"],
+            max_depth=rf_p["max_depth"],
+            random_state=rf_p["random_state"],
+            n_jobs=-1,
         ),
         "ridge": Ridge(alpha=reg_cfg["ridge"]["alpha"]),
     }
@@ -71,12 +96,35 @@ def _build_regression_models() -> dict[str, Any]:
 
 def _build_classification_models() -> dict[str, Any]:
     cls_cfg = _MODEL_CFG["classification"]
+    xgb_p = cls_cfg["xgb"]
+    lgb_p = cls_cfg["lightgbm"]
+    rf_p = cls_cfg["random_forest"]
     return {
-        "xgb": GradientBoostingClassifier(**cls_cfg["gradient_boosting"]),
-        "rf": GradientBoostingClassifier(
-            n_estimators=cls_cfg["random_forest"]["n_estimators"],
-            max_depth=cls_cfg["random_forest"]["max_depth"],
-            random_state=cls_cfg["random_forest"]["random_state"],
+        "xgb": xgb_lib.XGBClassifier(
+            n_estimators=xgb_p["n_estimators"],
+            learning_rate=xgb_p["learning_rate"],
+            max_depth=xgb_p["max_depth"],
+            subsample=xgb_p.get("subsample", 0.8),
+            colsample_bytree=xgb_p.get("colsample_bytree", 0.8),
+            random_state=xgb_p["random_state"],
+            eval_metric="mlogloss",
+            verbosity=0,
+            n_jobs=-1,
+        ),
+        "lgbm": lgb.LGBMClassifier(
+            n_estimators=lgb_p["n_estimators"],
+            learning_rate=lgb_p["learning_rate"],
+            max_depth=lgb_p["max_depth"],
+            num_leaves=lgb_p.get("num_leaves", 63),
+            random_state=lgb_p["random_state"],
+            n_jobs=-1,
+            verbose=-1,
+        ),
+        "rf": RandomForestClassifier(
+            n_estimators=rf_p["n_estimators"],
+            max_depth=rf_p["max_depth"],
+            random_state=rf_p["random_state"],
+            n_jobs=-1,
         ),
         "logreg": LogisticRegression(**cls_cfg["logistic_regression"]),
     }
@@ -88,12 +136,17 @@ def _regression_objective(trial: optuna.Trial, X: np.ndarray, y: np.ndarray) -> 
     params = {
         "n_estimators": trial.suggest_int("n_estimators", 100, 800),
         "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
-        "max_depth": trial.suggest_int("max_depth", 3, 8),
-        "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 20),
+        "max_depth": trial.suggest_int("max_depth", 3, 9),
+        "min_child_weight": trial.suggest_int("min_child_weight", 1, 20),
         "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+        "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
+        "reg_alpha": trial.suggest_float("reg_alpha", 1e-8, 1.0, log=True),
+        "reg_lambda": trial.suggest_float("reg_lambda", 1e-8, 1.0, log=True),
         "random_state": _DATA_CFG["random_state"],
+        "verbosity": 0,
+        "n_jobs": -1,
     }
-    model = GradientBoostingRegressor(**params)
+    model = xgb_lib.XGBRegressor(**params)
     cv_scores = cross_val_score(
         model, X, y,
         cv=_MODEL_CFG["cv_folds"],
@@ -107,12 +160,18 @@ def _classification_objective(trial: optuna.Trial, X: np.ndarray, y: np.ndarray)
     params = {
         "n_estimators": trial.suggest_int("n_estimators", 100, 800),
         "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
-        "max_depth": trial.suggest_int("max_depth", 3, 8),
-        "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 20),
+        "max_depth": trial.suggest_int("max_depth", 3, 9),
+        "min_child_weight": trial.suggest_int("min_child_weight", 1, 20),
         "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+        "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
+        "reg_alpha": trial.suggest_float("reg_alpha", 1e-8, 1.0, log=True),
+        "reg_lambda": trial.suggest_float("reg_lambda", 1e-8, 1.0, log=True),
         "random_state": _DATA_CFG["random_state"],
+        "eval_metric": "mlogloss",
+        "verbosity": 0,
+        "n_jobs": -1,
     }
-    model = GradientBoostingClassifier(**params)
+    model = xgb_lib.XGBClassifier(**params)
     cv_scores = cross_val_score(
         model, X, y,
         cv=StratifiedKFold(n_splits=_MODEL_CFG["cv_folds"], shuffle=True,
@@ -266,11 +325,13 @@ class ModelTrainer:
     def _tune(self, name: str, X: np.ndarray, y: np.ndarray) -> Any:
         logger.info("Running Optuna hyperparameter search …")
         tune_cfg = _MODEL_CFG["hyperparameter_tuning"]
-        objective = (
-            lambda t: _regression_objective(t, X, y)
-            if self.task == "regression"
-            else lambda t: _classification_objective(t, X, y)
-        )
+        # NOTE: must assign objective via if/else to avoid Python lambda-parse bug
+        # where `lambda t: a if cond else lambda t: b` embeds cond inside the
+        # first lambda body instead of selecting between two lambdas.
+        if self.task == "regression":
+            objective = lambda t: _regression_objective(t, X, y)  # noqa: E731
+        else:
+            objective = lambda t: _classification_objective(t, X, y)  # noqa: E731
         study = optuna.create_study(
             direction="maximize",
             study_name=f"{self.task}_{name}",
@@ -283,13 +344,16 @@ class ModelTrainer:
         )
         best = study.best_params
         best["random_state"] = _DATA_CFG["random_state"]
+        best["verbosity"] = 0
+        best["n_jobs"] = -1
         logger.info(f"Best params: {best}")
-        ctor = (
-            GradientBoostingRegressor
-            if self.task == "regression"
-            else GradientBoostingClassifier
-        )
-        return ctor(**best)
+        if self.task == "regression":
+            best.pop("use_label_encoder", None)
+            best.pop("eval_metric", None)
+            return xgb_lib.XGBRegressor(**best)
+        else:
+            best["eval_metric"] = "mlogloss"
+            return xgb_lib.XGBClassifier(**best)
 
     def _compute_metrics(
         self, y_true: np.ndarray, y_pred: np.ndarray
@@ -339,9 +403,9 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--model",
-        choices=["xgb", "rf", "ridge", "logreg"],
+        choices=["xgb", "lgbm", "rf", "ridge", "logreg"],
         default=None,
-        help="Train a specific model only.",
+        help="Train a specific model only (default: all models).",
     )
     return p.parse_args()
 
