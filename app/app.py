@@ -249,7 +249,7 @@ def main() -> None:
                     if c not in {DATA_CFG["target_regression"], DATA_CFG["target_classification"]}
                 ]
                 if df_feat is not None
-                else []
+                else list(scaler.feature_names_in_)
             )
 
             if st.button("🚀 Predict Economic Impact", type="primary", use_container_width=True):
