@@ -317,6 +317,11 @@ class ModelTrainer:
             _DATA_CFG["target_classification"],
         }
         feat_cols = [c for c in df.columns if c not in exclude]
+        n_missing = df[feat_cols].isna().sum().sum()
+        if n_missing:
+            logger.warning(
+                f"Feature matrix contains {n_missing} missing value(s). Filling with 0."
+            )
         X = df[feat_cols].fillna(0)
         y = df[target_col]
         logger.info(f"Target: {target_col} | Features: {len(feat_cols)}")

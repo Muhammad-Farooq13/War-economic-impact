@@ -1,8 +1,10 @@
 # 🌍 War Economic Impact Predictor
 
-> **Predicting the economic damage of armed conflicts using pre-war economic
-> indicators and machine learning — built on 100,000+ conflict-economic data
-> points spanning WWII to 2026.**
+> An end-to-end machine learning system that forecasts GDP contraction and economic
+> severity from conflict indicators — combining gradient-boosted models, Bayesian
+> hyperparameter search, and SHAP explainability to support policy-level
+> decision-making. Built on 100,000+ synthetic conflict-economic scenarios, with a
+> live Streamlit dashboard.
 
 [![CI](https://github.com/Muhammad-Farooq13/War-economic-impact/actions/workflows/ci.yml/badge.svg)](https://github.com/Muhammad-Farooq13/War-economic-impact/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -13,10 +15,11 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B.svg)](https://streamlit.io/)
 [![SHAP](https://img.shields.io/badge/SHAP-explainability-purple.svg)](https://shap.readthedocs.io/)
 [![Optuna](https://img.shields.io/badge/Optuna-HPO-lightblue.svg)](https://optuna.org/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?logo=streamlit)](https://share.streamlit.io/deploy)
 
 ---
 
-## Problem Statement
+## 🎯 Problem Statement
 
 Armed conflicts cause catastrophic and long-lasting damage to national economies.
 Policy makers, NGOs, and international organisations often lack tools to
@@ -35,15 +38,23 @@ This project builds an end-to-end machine learning system that:
 
 | Attribute | Value |
 |-----------|-------|
-| Source | Synthetic conflict-economic dataset |
+| Source | Synthetic conflict-economic dataset (see Limitations) |
 | Records | 100,001 rows |
 | Features | 28 columns |
-| Coverage | WWII (1939) → Israel-Hamas War (2026) |
+| Coverage | Synthetic scenarios inspired by conflicts from WWII (1939) to present (2026) |
 | Target | `GDP_Change_%` (regression) + derived `Severity_Label` (classification) |
 
 **Key feature groups:**  
 Economic indicators · Unemployment metrics · Poverty & food security ·
 Informal economy · Black market activity · Conflict metadata
+
+### ⚠️ Limitations
+
+- The dataset is **synthetically generated** to simulate conflict-economic dynamics.
+  Performance metrics reflect synthetic patterns and should not be interpreted as
+  real-world predictive accuracy.
+- Real-world integration is a planned next step. Candidate data sources:
+  [ACLED](https://acleddata.com/) · [World Bank Open Data](https://data.worldbank.org/) · [UCDP/PRIO](https://ucdp.uu.se/) · [SIPRI](https://www.sipri.org/)
 
 ---
 
@@ -89,9 +100,10 @@ war-economic-impact/
 │   └── config.yaml             ← Single source of truth for all settings
 ├── .github/workflows/ci.yml    ← GitHub Actions CI pipeline
 ├── Makefile                    ← Dev workflow shortcuts
+├── Dockerfile
+├── CHANGELOG.md
 ├── requirements.txt
 ├── requirements-dev.txt
-├── setup.py
 └── pyproject.toml
 ```
 
@@ -139,6 +151,14 @@ make mlflow-ui
 # Opens: http://localhost:5001
 ```
 
+### 5. Run with Docker
+
+```bash
+docker build -t war-economic-impact .
+docker run -p 8501:8501 war-economic-impact
+# Opens: http://localhost:8501
+```
+
 ---
 
 ## 🔬 Methodology
@@ -172,7 +192,7 @@ make mlflow-ui
 - **Stratified 5-fold cross-validation** (classification)  
 - **Holdout test set** (20%) — never touched during tuning  
 - **Metrics:**
-  - Regression: RMSE, MAE, MAPE, R²
+  - Regression: RMSE, MAE, R²
   - Classification: F1-weighted, F1-macro, per-class precision/recall
 
 ### Explainability
@@ -198,7 +218,17 @@ make mlflow-ui
 
 ---
 
-## 🖥 Streamlit Application
+## � Screenshots
+
+| Prediction Panel | Model Insights |
+|:---:|:---:|
+| ![Prediction Panel](reports/figures/screenshot_prediction.png) | ![Model Insights](reports/figures/screenshot_insights.png) |
+
+> Run `make app` and take screenshots, then save them to `reports/figures/` to populate this section.
+
+---
+
+## �🖥 Streamlit Application
 
 The interactive dashboard provides:
 
@@ -253,30 +283,15 @@ models:
 
 ---
 
-## 🎯 Job Market Alignment
-
-This project is intentionally designed to demonstrate the full DS skill stack:
-
-| Skill | Where demonstrated |
-|-------|-------------------|
-| **Data engineering** | `DataPreprocessor` with schema validation, type coercion, imputation |
-| **Feature engineering** | 20+ engineered features with documented rationale |
-| **ML modelling** | Multi-model comparison, stratified CV, Optuna HPO |
-| **Experiment tracking** | MLflow runs with params, metrics, and model artefacts |
-| **Model explainability** | SHAP (global + local) |
-| **Software engineering** | Modular src/, tests, type hints, docstrings |
-| **CI/CD** | GitHub Actions pipeline (lint → test → smoke test) |
-| **Deployment** | Streamlit app with polished UI |
-| **Documentation** | Config-driven, reproducible, README-first |
-
----
-
 ## 📚 References
 
 - Chen, T., & Guestrin, C. (2016). *XGBoost: A Scalable Tree Boosting System*  
 - Lundberg, S. M., & Lee, S. I. (2017). *A Unified Approach to Interpreting Model Predictions (SHAP)*  
 - Akiba, T. et al. (2019). *Optuna: A Next-generation Hyperparameter Optimization Framework*  
-- World Bank. (2023). *Conflict and Development Resource Guide*
+- World Bank. (2023). *Conflict and Development Resource Guide*  
+- ACLED. (2024). *Armed Conflict Location & Event Data*. https://acleddata.com/  
+- Uppsala Conflict Data Program / PRIO. (2023). *UCDP/PRIO Armed Conflict Dataset*  
+- SIPRI. (2024). *SIPRI Military Expenditure Database*
 
 ---
 
