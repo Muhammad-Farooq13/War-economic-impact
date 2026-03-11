@@ -35,6 +35,9 @@ data/external/*
 models/*.pkl
 models/*.joblib
 models/*.model
+!models/regression_xgb.joblib
+!models/classification_xgb.joblib
+!models/scaler_xgb.joblib
 mlruns/
 
 # ── Reports & Logs ────────────────────────────────────────────────────────────
