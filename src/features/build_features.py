@@ -33,7 +33,6 @@ sys.path.insert(0, str(ROOT))
 
 from src.utils import load_config  # noqa: E402
 
-
 # ─── Config ───────────────────────────────────────────────────────────────────
 _CFG = load_config()
 _DATA_CFG = _CFG["data"]
@@ -122,11 +121,7 @@ class FeatureEngineer:
         X = df[feat_cols].fillna(0)
         y = df[target]
         mi_scores = mutual_info_regression(X, y, random_state=42)
-        return (
-            pd.Series(mi_scores, index=feat_cols)
-            .sort_values(ascending=False)
-            .head(top_n)
-        )
+        return pd.Series(mi_scores, index=feat_cols).sort_values(ascending=False).head(top_n)
 
     def sklearn_pipeline(self) -> Pipeline:
         """
@@ -182,10 +177,7 @@ class FeatureEngineer:
 
     def _reconstruction_ratio(self, df: pd.DataFrame) -> pd.DataFrame:
         """Reconstruction cost as multiple of war cost."""
-        if (
-            "Estimated_Reconstruction_Cost_USD" in df.columns
-            and "Cost_of_War_USD" in df.columns
-        ):
+        if "Estimated_Reconstruction_Cost_USD" in df.columns and "Cost_of_War_USD" in df.columns:
             denom = df["Cost_of_War_USD"].replace(0, np.nan)
             df["Reconstruction_to_War_Cost_Ratio"] = (
                 df["Estimated_Reconstruction_Cost_USD"] / denom
@@ -199,13 +191,13 @@ class FeatureEngineer:
             and "Informal_Economy_Size_Pre_War_%" in df.columns
         ):
             df["Informal_Economy_Growth_%"] = (
-                df["Informal_Economy_Size_During_War_%"]
-                - df["Informal_Economy_Size_Pre_War_%"]
+                df["Informal_Economy_Size_During_War_%"] - df["Informal_Economy_Size_Pre_War_%"]
             )
         return df
 
 
 # ─── CLI entry-point ──────────────────────────────────────────────────────────
+
 
 def main() -> None:
     import argparse

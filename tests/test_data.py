@@ -1,4 +1,5 @@
 """Tests for data preprocessing pipeline."""
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -85,5 +86,6 @@ class TestDataPreprocessor:
         preprocessor.save(df_proc, out_path)
         df_reloaded = pd.read_parquet(out_path)
         assert df_reloaded.shape == df_proc.shape
-        pd.testing.assert_frame_equal(df_proc.reset_index(drop=True),
-                                      df_reloaded.reset_index(drop=True))
+        pd.testing.assert_frame_equal(
+            df_proc.reset_index(drop=True), df_reloaded.reset_index(drop=True)
+        )

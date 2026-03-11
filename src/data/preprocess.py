@@ -87,11 +87,7 @@ class DataPreprocessor:
         # ── Boolean Black market ──────────────────────────────────────────────
         bm_map = {"Dominant": 3, "High": 2, "Moderate": 1, "Low": 0}
         df["Black_Market_Activity_Level"] = (
-            df["Black_Market_Activity_Level"]
-            .str.strip()
-            .map(bm_map)
-            .fillna(0)
-            .astype(int)
+            df["Black_Market_Activity_Level"].str.strip().map(bm_map).fillna(0).astype(int)
         )
 
         # ── Missing value imputation ───────────────────────────────────────────
@@ -127,9 +123,7 @@ class DataPreprocessor:
         df = self._encode_categoricals(df)
 
         # ── Drop low-value identity columns ───────────────────────────────────
-        drop_cols = [
-            c for c in self.data_cfg.get("drop_features", []) if c in df.columns
-        ]
+        drop_cols = [c for c in self.data_cfg.get("drop_features", []) if c in df.columns]
         df = df.drop(columns=drop_cols)
         logger.info(f"Dropped columns: {drop_cols}")
 
@@ -148,9 +142,7 @@ class DataPreprocessor:
 
     def _add_duration(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute conflict duration in years (End - Start, capped at 0)."""
-        df["Conflict_Duration_Years"] = (
-            df["End_Year"] - df["Start_Year"]
-        ).clip(lower=0)
+        df["Conflict_Duration_Years"] = (df["End_Year"] - df["Start_Year"]).clip(lower=0)
         return df
 
     def _add_severity_label(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -201,15 +193,10 @@ class DataPreprocessor:
         Ordinal-encode categorical columns that remain after drop_features.
         Label encoders are stored for inverse-transform / app use.
         """
-        cat_feats = [
-            c for c in self.data_cfg["categorical_features"] if c in df.columns
-        ]
+        cat_feats = [c for c in self.data_cfg["categorical_features"] if c in df.columns]
         # Black_Market_Activity_Level already mapped to int in clean()
         cat_feats = [
-            c
-            for c in cat_feats
-            if c != "Black_Market_Activity_Level"
-            and df[c].dtype == object
+            c for c in cat_feats if c != "Black_Market_Activity_Level" and df[c].dtype == object
         ]
 
         for col in cat_feats:

@@ -1,11 +1,12 @@
 """Tests for model training and prediction pipeline."""
+
+import joblib
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
-from sklearn.preprocessing import RobustScaler
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.model_selection import train_test_split
-import joblib
+from sklearn.preprocessing import RobustScaler
 
 from src.data.preprocess import DataPreprocessor
 from src.features.build_features import FeatureEngineer
@@ -41,9 +42,7 @@ def trained_cls(cfg, feature_matrix):
     feat_cols = eng.get_feature_columns(df_feat, "Severity_Label")
     X = df_feat[feat_cols].fillna(0)
     y = df_feat["Severity_Label"]
-    X_tr, X_te, y_tr, y_te = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     scaler = RobustScaler()
     X_tr_sc = scaler.fit_transform(X_tr)
     X_te_sc = scaler.transform(X_te)
@@ -75,6 +74,7 @@ class TestRegressionModel:
 
     def test_r2_positive(self, trained_reg):
         from sklearn.metrics import r2_score
+
         model, _, X_te, X_te_sc, y_te = trained_reg
         preds = model.predict(X_te_sc)
         r2 = r2_score(y_te, preds)

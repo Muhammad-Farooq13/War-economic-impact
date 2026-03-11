@@ -59,6 +59,7 @@ _MLFLOW_CFG = _CFG["mlflow"]
 
 # ─── Model Registry ───────────────────────────────────────────────────────────
 
+
 def _build_regression_models() -> dict[str, Any]:
     reg_cfg = _MODEL_CFG["regression"]
     xgb_p = reg_cfg["xgb"]
@@ -132,6 +133,7 @@ def _build_classification_models() -> dict[str, Any]:
 
 # ─── Optuna objectives ────────────────────────────────────────────────────────
 
+
 def _regression_objective(trial: optuna.Trial, X: np.ndarray, y: np.ndarray) -> float:
     params = {
         "n_estimators": trial.suggest_int("n_estimators", 100, 800),
@@ -148,7 +150,9 @@ def _regression_objective(trial: optuna.Trial, X: np.ndarray, y: np.ndarray) -> 
     }
     model = xgb_lib.XGBRegressor(**params)
     cv_scores = cross_val_score(
-        model, X, y,
+        model,
+        X,
+        y,
         cv=_MODEL_CFG["cv_folds"],
         scoring=_MODEL_CFG["scoring_regression"],
         n_jobs=-1,
@@ -173,9 +177,12 @@ def _classification_objective(trial: optuna.Trial, X: np.ndarray, y: np.ndarray)
     }
     model = xgb_lib.XGBClassifier(**params)
     cv_scores = cross_val_score(
-        model, X, y,
-        cv=StratifiedKFold(n_splits=_MODEL_CFG["cv_folds"], shuffle=True,
-                           random_state=_DATA_CFG["random_state"]),
+        model,
+        X,
+        y,
+        cv=StratifiedKFold(
+            n_splits=_MODEL_CFG["cv_folds"], shuffle=True, random_state=_DATA_CFG["random_state"]
+        ),
         scoring=_MODEL_CFG["scoring_classification"],
         n_jobs=-1,
     )
@@ -183,6 +190,7 @@ def _classification_objective(trial: optuna.Trial, X: np.ndarray, y: np.ndarray)
 
 
 # ─── Main Trainer ─────────────────────────────────────────────────────────────
+
 
 class ModelTrainer:
     """
@@ -205,7 +213,8 @@ class ModelTrainer:
         df = self._load_data()
         X, y = self._split_xy(df)
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y,
+            X,
+            y,
             test_size=_DATA_CFG["test_size"],
             random_state=_DATA_CFG["random_state"],
             stratify=y if self.task == "classification" else None,
@@ -233,10 +242,7 @@ class ModelTrainer:
             t0 = time.time()
 
             # ── Optional Optuna tuning ─────────────────────────────────────────
-            if (
-                _MODEL_CFG["hyperparameter_tuning"]["enabled"]
-                and name.startswith("xgb")
-            ):
+            if _MODEL_CFG["hyperparameter_tuning"]["enabled"] and name.startswith("xgb"):
                 model = self._tune(name, X_train_sc, y_train)
 
             with mlflow.start_run(run_name=f"{self.task}_{name}"):
@@ -256,14 +262,14 @@ class ModelTrainer:
                     else _MODEL_CFG["cv_folds"]
                 )
                 cv_scores = cross_val_score(
-                    model, X_train_sc, y_train,
+                    model,
+                    X_train_sc,
+                    y_train,
                     cv=cv_kfold,
                     scoring=cv_scorer,
                     n_jobs=-1,
                 )
-                logger.info(
-                    f"CV {cv_scorer}: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}"
-                )
+                logger.info(f"CV {cv_scorer}: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
 
                 # ── Final fit ─────────────────────────────────────────────────
                 model.fit(X_train_sc, y_train)
@@ -288,13 +294,9 @@ class ModelTrainer:
     # ──────────────────────────────────────────────────────────────────────────
 
     def _load_data(self) -> pd.DataFrame:
-        feat_path = (
-            ROOT / "data" / "processed" / "war_economic_features.parquet"
-        )
+        feat_path = ROOT / "data" / "processed" / "war_economic_features.parquet"
         if not feat_path.exists():
-            logger.warning(
-                "Feature file not found. Falling back to processed parquet."
-            )
+            logger.warning("Feature file not found. Falling back to processed parquet.")
             feat_path = ROOT / _CFG["paths"]["processed_data"]
         if not feat_path.exists():
             raise FileNotFoundError(
@@ -304,9 +306,7 @@ class ModelTrainer:
         logger.info(f"Loaded data: {df.shape}")
         return df
 
-    def _split_xy(
-        self, df: pd.DataFrame
-    ) -> tuple[pd.DataFrame, pd.Series]:
+    def _split_xy(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
         target_col = (
             _DATA_CFG["target_regression"]
             if self.task == "regression"
@@ -319,9 +319,7 @@ class ModelTrainer:
         feat_cols = [c for c in df.columns if c not in exclude]
         n_missing = df[feat_cols].isna().sum().sum()
         if n_missing:
-            logger.warning(
-                f"Feature matrix contains {n_missing} missing value(s). Filling with 0."
-            )
+            logger.warning(f"Feature matrix contains {n_missing} missing value(s). Filling with 0.")
         X = df[feat_cols].fillna(0)
         y = df[target_col]
         logger.info(f"Target: {target_col} | Features: {len(feat_cols)}")
@@ -360,9 +358,7 @@ class ModelTrainer:
             best["eval_metric"] = "mlogloss"
             return xgb_lib.XGBClassifier(**best)
 
-    def _compute_metrics(
-        self, y_true: np.ndarray, y_pred: np.ndarray
-    ) -> dict[str, float]:
+    def _compute_metrics(self, y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
         if self.task == "regression":
             return {
                 "rmse": float(np.sqrt(mean_squared_error(y_true, y_pred))),
@@ -374,9 +370,7 @@ class ModelTrainer:
             "f1_macro": float(f1_score(y_true, y_pred, average="macro")),
         }
 
-    def _log_mlflow(
-        self, model: Any, metrics: dict, X_train: np.ndarray, name: str
-    ) -> None:
+    def _log_mlflow(self, model: Any, metrics: dict, X_train: np.ndarray, name: str) -> None:
         mlflow.log_params({"model_type": name, "task": self.task})
         mlflow.log_metrics(metrics)
         if _MLFLOW_CFG["log_artifacts"]:
@@ -399,6 +393,7 @@ class ModelTrainer:
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Train war economic impact models.")
     p.add_argument(
@@ -417,9 +412,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    tasks = (
-        ["regression", "classification"] if args.task == "both" else [args.task]
-    )
+    tasks = ["regression", "classification"] if args.task == "both" else [args.task]
     for task in tasks:
         trainer = ModelTrainer(task=task, model_key=args.model)
         trainer.run()

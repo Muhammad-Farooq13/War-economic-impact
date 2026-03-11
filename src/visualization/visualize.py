@@ -36,14 +36,23 @@ def _save(fig: plt.Figure, fname: str) -> None:
 # 1. Distribution Plots
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def plot_gdp_distribution(df: pd.DataFrame, save: bool = True) -> plt.Figure:
     """Histogram + KDE of GDP_Change_% across all conflicts."""
     fig, ax = plt.subplots(figsize=(10, 5))
-    sns.histplot(
-        df["GDP_Change_%"], bins=60, kde=True, color=PALETTE[0], ax=ax, stat="density"
+    sns.histplot(df["GDP_Change_%"], bins=60, kde=True, color=PALETTE[0], ax=ax, stat="density")
+    ax.axvline(
+        df["GDP_Change_%"].median(),
+        color="red",
+        ls="--",
+        label=f"Median: {df['GDP_Change_%'].median():.1f}%",
     )
-    ax.axvline(df["GDP_Change_%"].median(), color="red", ls="--", label=f"Median: {df['GDP_Change_%'].median():.1f}%")
-    ax.axvline(df["GDP_Change_%"].mean(), color="orange", ls="--", label=f"Mean: {df['GDP_Change_%'].mean():.1f}%")
+    ax.axvline(
+        df["GDP_Change_%"].mean(),
+        color="orange",
+        ls="--",
+        label=f"Mean: {df['GDP_Change_%'].mean():.1f}%",
+    )
     ax.set_xlabel("GDP Change (%)")
     ax.set_title("Distribution of GDP Change During Conflict")
     ax.legend()
@@ -61,9 +70,13 @@ def plot_numeric_distributions(
     """Grid of histograms for key numeric columns."""
     if cols is None:
         cols = [
-            "GDP_Change_%", "Inflation_Rate_%", "Currency_Devaluation_%",
-            "Pre_War_Unemployment_%", "During_War_Unemployment_%",
-            "Pre_War_Poverty_Rate_%", "During_War_Poverty_Rate_%",
+            "GDP_Change_%",
+            "Inflation_Rate_%",
+            "Currency_Devaluation_%",
+            "Pre_War_Unemployment_%",
+            "During_War_Unemployment_%",
+            "Pre_War_Poverty_Rate_%",
+            "During_War_Poverty_Rate_%",
             "Food_Insecurity_Rate_%",
         ]
     cols = [c for c in cols if c in df.columns]
@@ -89,18 +102,19 @@ def plot_numeric_distributions(
 # 2. Categorical Plots
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def plot_gdp_by_conflict_type(df: pd.DataFrame, save: bool = True) -> plt.Figure:
     """Box plot of GDP change split by conflict type."""
     fig, ax = plt.subplots(figsize=(11, 5))
-    order = (
-        df.groupby("Conflict_Type")["GDP_Change_%"]
-        .median()
-        .sort_values()
-        .index.tolist()
-    )
+    order = df.groupby("Conflict_Type")["GDP_Change_%"].median().sort_values().index.tolist()
     sns.boxplot(
-        data=df, x="Conflict_Type", y="GDP_Change_%",
-        order=order, palette="muted", ax=ax, width=0.5,
+        data=df,
+        x="Conflict_Type",
+        y="GDP_Change_%",
+        order=order,
+        palette="muted",
+        ax=ax,
+        width=0.5,
     )
     ax.set_xlabel("Conflict Type")
     ax.set_ylabel("GDP Change (%)")
@@ -115,12 +129,15 @@ def plot_gdp_by_conflict_type(df: pd.DataFrame, save: bool = True) -> plt.Figure
 def plot_gdp_by_region(df: pd.DataFrame, save: bool = True) -> plt.Figure:
     """Violin plot of GDP change by region."""
     fig, ax = plt.subplots(figsize=(12, 5))
-    order = (
-        df.groupby("Region")["GDP_Change_%"].median().sort_values().index.tolist()
-    )
+    order = df.groupby("Region")["GDP_Change_%"].median().sort_values().index.tolist()
     sns.violinplot(
-        data=df, x="Region", y="GDP_Change_%",
-        order=order, palette="pastel", inner="box", ax=ax,
+        data=df,
+        x="Region",
+        y="GDP_Change_%",
+        order=order,
+        palette="pastel",
+        inner="box",
+        ax=ax,
     )
     ax.set_xlabel("Region")
     ax.set_ylabel("GDP Change (%)")
@@ -147,7 +164,8 @@ def plot_severity_distribution(df: pd.DataFrame, save: bool = True) -> plt.Figur
             bar.get_x() + bar.get_width() / 2,
             bar.get_height() + 300,
             f"{bar.get_height():,}",
-            ha="center", fontsize=10,
+            ha="center",
+            fontsize=10,
         )
     ax.set_xlabel("Severity Class")
     ax.set_ylabel("Count")
@@ -162,6 +180,7 @@ def plot_severity_distribution(df: pd.DataFrame, save: bool = True) -> plt.Figur
 # 3. Correlation & Heatmap
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def plot_correlation_heatmap(
     df: pd.DataFrame,
     top_n: int = 18,
@@ -172,11 +191,7 @@ def plot_correlation_heatmap(
     corr = num_df.corr()
     if "GDP_Change_%" in corr.columns:
         top_cols = (
-            corr["GDP_Change_%"]
-            .abs()
-            .sort_values(ascending=False)
-            .head(top_n)
-            .index.tolist()
+            corr["GDP_Change_%"].abs().sort_values(ascending=False).head(top_n).index.tolist()
         )
     else:
         top_cols = num_df.columns[:top_n].tolist()
@@ -185,9 +200,17 @@ def plot_correlation_heatmap(
     fig, ax = plt.subplots(figsize=(14, 11))
     mask = np.triu(np.ones_like(sub_corr, dtype=bool))
     sns.heatmap(
-        sub_corr, mask=mask, annot=True, fmt=".2f",
-        cmap="coolwarm", center=0, vmin=-1, vmax=1,
-        linewidths=0.4, ax=ax, annot_kws={"size": 7},
+        sub_corr,
+        mask=mask,
+        annot=True,
+        fmt=".2f",
+        cmap="coolwarm",
+        center=0,
+        vmin=-1,
+        vmax=1,
+        linewidths=0.4,
+        ax=ax,
+        annot_kws={"size": 7},
     )
     ax.set_title(f"Feature Correlation Matrix (top {top_n} by |corr| with GDP)", fontsize=13)
     fig.tight_layout()
@@ -199,6 +222,7 @@ def plot_correlation_heatmap(
 # ═══════════════════════════════════════════════════════════════════════════════
 # 4. Time / Duration Analysis
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def plot_duration_vs_gdp(df: pd.DataFrame, save: bool = True) -> plt.Figure:
     """Scatter: conflict duration vs GDP change, coloured by severity."""
@@ -217,7 +241,9 @@ def plot_duration_vs_gdp(df: pd.DataFrame, save: bool = True) -> plt.Figure:
         y="GDP_Change_%",
         hue=hue_col,
         palette=["#2196F3", "#FF9800", "#F44336", "#B71C1C"],
-        alpha=0.5, s=20, ax=ax,
+        alpha=0.5,
+        s=20,
+        ax=ax,
     )
     ax.set_xlabel("Conflict Duration (Years)")
     ax.set_ylabel("GDP Change (%)")
@@ -232,6 +258,7 @@ def plot_duration_vs_gdp(df: pd.DataFrame, save: bool = True) -> plt.Figure:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 5. Plotly Interactive
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def plotly_gdp_choropleth(df: pd.DataFrame) -> go.Figure:
     """Plotly choropleth of mean GDP change by country/region."""
@@ -254,7 +281,8 @@ def plotly_scatter_matrix(df: pd.DataFrame, cols: Optional[list[str]] = None) ->
     """Interactive scatter matrix for selected features."""
     if cols is None:
         cols = [
-            "GDP_Change_%", "Inflation_Rate_%",
+            "GDP_Change_%",
+            "Inflation_Rate_%",
             "Unemployment_Spike_Percentage_Points",
             "During_War_Poverty_Rate_%",
             "Currency_Devaluation_%",

@@ -1,4 +1,5 @@
 """Tests for feature engineering pipeline."""
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -35,7 +36,11 @@ class TestFeatureEngineer:
     def test_log_values_finite(self, cfg, processed_df):
         eng = FeatureEngineer(cfg)
         df_feat = eng.build(processed_df)
-        assert df_feat["log_Cost_of_War_USD"].isfinite().all() if hasattr(df_feat["log_Cost_of_War_USD"], "isfinite") else True
+        assert (
+            df_feat["log_Cost_of_War_USD"].isfinite().all()
+            if hasattr(df_feat["log_Cost_of_War_USD"], "isfinite")
+            else True
+        )
         assert not df_feat["log_Cost_of_War_USD"].isnull().any()
 
     def test_black_market_pressure_created(self, cfg, processed_df):

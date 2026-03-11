@@ -39,6 +39,7 @@ from src.visualization.visualize import (  # noqa: E402
     plotly_gdp_choropleth,
     plotly_inflation_boxplot,
 )
+
 # isort:on
 
 # ─── Page config ──────────────────────────────────────────────────────────────
@@ -59,6 +60,7 @@ SEVERITY_COLORS = {0: "#4CAF50", 1: "#FF9800", 2: "#F44336", 3: "#212121"}
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
+
 
 @st.cache_resource
 def load_models():
@@ -122,13 +124,19 @@ def _build_input_vector(inputs: dict, feat_cols: list[str]) -> np.ndarray:
     if "Informal_Economy_Growth_%" in vec.index:
         vec["Informal_Economy_Growth_%"] = inputs["informal_during"] - inputs["informal_pre"]
     if "Economic_Stress_Index" in vec.index:
-        stress = inputs["unemp_spike"] + inputs["pre_poverty"] + inputs["inflation"] / 100 + inputs["food_insecurity"]
+        stress = (
+            inputs["unemp_spike"]
+            + inputs["pre_poverty"]
+            + inputs["inflation"] / 100
+            + inputs["food_insecurity"]
+        )
         vec["Economic_Stress_Index"] = min(stress / 200.0, 1.0)
 
     return vec.values.reshape(1, -1)
 
 
 # ─── Sidebar ──────────────────────────────────────────────────────────────────
+
 
 def sidebar() -> dict:
     st.sidebar.title("🌍 Conflict Parameters")
@@ -138,13 +146,26 @@ def sidebar() -> dict:
     with st.sidebar.expander("📌 Conflict Metadata", expanded=True):
         conflict_type = st.selectbox(
             "Conflict Type",
-            ["Civil War", "World War", "Asymmetric War", "Interstate/Counter-insurgency",
-             "Proxy War", "Territorial Dispute"],
+            [
+                "Civil War",
+                "World War",
+                "Asymmetric War",
+                "Interstate/Counter-insurgency",
+                "Proxy War",
+                "Territorial Dispute",
+            ],
         )
         region = st.selectbox(
             "Region",
-            ["Middle East", "Europe", "South Asia", "East Asia",
-             "Sub-Saharan Africa", "Latin America", "North Africa"],
+            [
+                "Middle East",
+                "Europe",
+                "South Asia",
+                "East Asia",
+                "Sub-Saharan Africa",
+                "Latin America",
+                "North Africa",
+            ],
         )
         status = st.selectbox("Status", ["Ongoing", "Resolved"])
         duration = st.slider("Conflict Duration (years)", 0, 30, 3)
@@ -172,26 +193,36 @@ def sidebar() -> dict:
         informal_during = st.slider("Informal Economy During War (%)", 0.0, 100.0, 45.0, 0.5)
 
     return dict(
-        conflict_type=conflict_type, region=region, status=status,
-        duration=duration, pre_unemp=pre_unemp, unemp_spike=unemp_spike,
-        youth_unemp=youth_unemp, inflation=inflation, currency_deval=currency_deval,
-        bm_gap=bm_gap, bm_level=bm_level, profiteering=profiteering,
-        pre_poverty=pre_poverty, poverty_increase=poverty_increase,
-        extreme_poverty=extreme_poverty, food_insecurity=food_insecurity,
-        informal_pre=informal_pre, informal_during=informal_during,
+        conflict_type=conflict_type,
+        region=region,
+        status=status,
+        duration=duration,
+        pre_unemp=pre_unemp,
+        unemp_spike=unemp_spike,
+        youth_unemp=youth_unemp,
+        inflation=inflation,
+        currency_deval=currency_deval,
+        bm_gap=bm_gap,
+        bm_level=bm_level,
+        profiteering=profiteering,
+        pre_poverty=pre_poverty,
+        poverty_increase=poverty_increase,
+        extreme_poverty=extreme_poverty,
+        food_insecurity=food_insecurity,
+        informal_pre=informal_pre,
+        informal_during=informal_during,
     )
 
 
 # ─── Main App ─────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     st.title("🌍 War Economic Impact Predictor")
-    st.markdown(
-        """
+    st.markdown("""
         > *Predicting the economic damage of armed conflicts using pre-war indicators
         > and machine learning. Built on 100,000+ conflict-economic data points.*
-        """
-    )
+        """)
 
     inputs = sidebar()
     reg_model, cls_model, scaler = load_models()
@@ -212,10 +243,15 @@ def main() -> None:
                 "```"
             )
         else:
-            feat_cols = [
-                c for c in df_feat.columns
-                if c not in {DATA_CFG["target_regression"], DATA_CFG["target_classification"]}
-            ] if df_feat is not None else []
+            feat_cols = (
+                [
+                    c
+                    for c in df_feat.columns
+                    if c not in {DATA_CFG["target_regression"], DATA_CFG["target_classification"]}
+                ]
+                if df_feat is not None
+                else []
+            )
 
             if st.button("🚀 Predict Economic Impact", type="primary", use_container_width=True):
                 x_vec = _build_input_vector(inputs, feat_cols)
@@ -227,10 +263,19 @@ def main() -> None:
                 severity_color = SEVERITY_COLORS[severity_pred]
 
                 col1, col2, col3 = st.columns(3)
-                col1.metric("Predicted GDP Change", f"{gdp_pred:.1f}%",
-                            delta=f"{gdp_pred:.1f}pp vs baseline",
-                            delta_color="inverse")
-                col2.metric("Economic Severity", severity_label.replace("🟢 ", "").replace("🟠 ", "").replace("🔴 ", "").replace("⚫ ", ""))
+                col1.metric(
+                    "Predicted GDP Change",
+                    f"{gdp_pred:.1f}%",
+                    delta=f"{gdp_pred:.1f}pp vs baseline",
+                    delta_color="inverse",
+                )
+                col2.metric(
+                    "Economic Severity",
+                    severity_label.replace("🟢 ", "")
+                    .replace("🟠 ", "")
+                    .replace("🔴 ", "")
+                    .replace("⚫ ", ""),
+                )
                 col3.metric("Inflation Input", f"{inputs['inflation']:.1f}%")
 
                 st.markdown(
@@ -252,22 +297,24 @@ def main() -> None:
                 )
 
                 # Gauge chart
-                fig = go.Figure(go.Indicator(
-                    mode="gauge+number+delta",
-                    value=gdp_pred,
-                    delta={"reference": 0},
-                    title={"text": "GDP Change (%)"},
-                    gauge={
-                        "axis": {"range": [-100, 20]},
-                        "bar": {"color": severity_color},
-                        "steps": [
-                            {"range": [-100, -50], "color": "#B71C1C"},
-                            {"range": [-50, -25], "color": "#F44336"},
-                            {"range": [-25, -10], "color": "#FF9800"},
-                            {"range": [-10, 20], "color": "#4CAF50"},
-                        ],
-                    },
-                ))
+                fig = go.Figure(
+                    go.Indicator(
+                        mode="gauge+number+delta",
+                        value=gdp_pred,
+                        delta={"reference": 0},
+                        title={"text": "GDP Change (%)"},
+                        gauge={
+                            "axis": {"range": [-100, 20]},
+                            "bar": {"color": severity_color},
+                            "steps": [
+                                {"range": [-100, -50], "color": "#B71C1C"},
+                                {"range": [-50, -25], "color": "#F44336"},
+                                {"range": [-25, -10], "color": "#FF9800"},
+                                {"range": [-10, 20], "color": "#4CAF50"},
+                            ],
+                        },
+                    )
+                )
                 fig.update_layout(height=300)
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -291,9 +338,9 @@ def main() -> None:
 
             # Add severity label for viz
             df_viz = df_raw.copy()
-            df_viz["Conflict_Duration_Years"] = (
-                df_viz["End_Year"] - df_viz["Start_Year"]
-            ).clip(lower=0)
+            df_viz["Conflict_Duration_Years"] = (df_viz["End_Year"] - df_viz["Start_Year"]).clip(
+                lower=0
+            )
             conditions = [
                 df_viz["GDP_Change_%"] > -10,
                 (df_viz["GDP_Change_%"] <= -10) & (df_viz["GDP_Change_%"] > -25),
@@ -338,7 +385,7 @@ def main() -> None:
         shap_bee = fig_dir / "shap_beeswarm_xgb.png"
         reg_eval = fig_dir / "regression_xgb.png"
         conf_mat = fig_dir / "confusion_xgb.png"
-        fi_reg   = fig_dir / "shap_classification_xgb.png"
+        fi_reg = fig_dir / "shap_classification_xgb.png"
 
         def show_img(path, caption):
             if path.exists():
@@ -360,8 +407,7 @@ def main() -> None:
 
         show_img(fi_reg, "SHAP Feature Importance — XGBoost Classifier")
 
-        st.markdown(
-            """
+        st.markdown("""
             ---
             ### How to reproduce this analysis
 
@@ -380,8 +426,7 @@ def main() -> None:
             **Tuning:** Optuna (50 trials, XGBoost)  
             **Tracking:** MLflow @ `http://localhost:5001`  
             **Explainability:** SHAP TreeExplainer (global bar + beeswarm)
-            """
-        )
+            """)
 
 
 if __name__ == "__main__":

@@ -69,7 +69,8 @@ class ModelEvaluator:
         df = self._load_data()
         X, y = self._split_xy(df)
         _, X_test, _, y_test = train_test_split(
-            X, y,
+            X,
+            y,
             test_size=_DATA_CFG["test_size"],
             random_state=_DATA_CFG["random_state"],
             stratify=y if self.task == "classification" else None,
@@ -122,9 +123,7 @@ class ModelEvaluator:
         from sklearn.metrics import accuracy_score, f1_score
 
         return {
-            "Accuracy": float(
-                accuracy_score(y_true, y_pred)  # type: ignore
-            ),
+            "Accuracy": float(accuracy_score(y_true, y_pred)),  # type: ignore
             "F1_Weighted": float(f1_score(y_true, y_pred, average="weighted")),
             "F1_Macro": float(f1_score(y_true, y_pred, average="macro")),
         }
@@ -166,9 +165,7 @@ class ModelEvaluator:
         ax2.set_ylabel("Residuals")
         ax2.set_title("Residual Plot")
 
-        fig.suptitle(
-            f"Regression Evaluation – {self.model_key.upper()}", fontsize=14
-        )
+        fig.suptitle(f"Regression Evaluation – {self.model_key.upper()}", fontsize=14)
         fig.tight_layout()
         path = _FIG_DIR / f"regression_{self.model_key}.png"
         fig.savefig(path, dpi=150)
@@ -208,9 +205,10 @@ class ModelEvaluator:
             # For multi-class classifiers LightGBM/RF returns a list of arrays;
             # use the mean-absolute across classes for the bar summary.
             import numpy as _np
+
             if isinstance(shap_values, list):
                 shap_plot_values = _np.abs(_np.stack(shap_values, axis=0)).mean(axis=0)
-            elif shap_values.ndim == 3:          # XGBoost multi-class (n, feat, classes)
+            elif shap_values.ndim == 3:  # XGBoost multi-class (n, feat, classes)
                 shap_plot_values = _np.abs(shap_values).mean(axis=2)
             else:
                 shap_plot_values = shap_values
