@@ -29,8 +29,9 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.utils import load_config
-from src.visualization.visualize import (
+# isort:off
+from src.utils import load_config  # noqa: E402
+from src.visualization.visualize import (  # noqa: E402
     plot_gdp_by_conflict_type,
     plot_gdp_by_region,
     plot_gdp_distribution,
@@ -38,6 +39,7 @@ from src.visualization.visualize import (
     plotly_gdp_choropleth,
     plotly_inflation_boxplot,
 )
+# isort:on
 
 # ─── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
