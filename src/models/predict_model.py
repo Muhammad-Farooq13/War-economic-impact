@@ -80,7 +80,12 @@ class Predictor:
             X = self.scaler.transform(X)
 
         preds = self.model.predict(X)
-        label = f"predicted_{_DATA_CFG['target_regression'] if self.task == 'regression' else _DATA_CFG['target_classification']}"
+        target = (
+            _DATA_CFG["target_regression"]
+            if self.task == "regression"
+            else _DATA_CFG["target_classification"]
+        )
+        label = f"predicted_{target}"
         return pd.Series(preds, index=df.index, name=label)
 
 

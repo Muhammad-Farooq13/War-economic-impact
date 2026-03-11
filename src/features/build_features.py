@@ -24,7 +24,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from loguru import logger
-from sklearn.feature_selection import SelectFromModel, mutual_info_regression
+from sklearn.feature_selection import mutual_info_regression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler
 

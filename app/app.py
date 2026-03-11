@@ -22,7 +22,6 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -289,7 +288,8 @@ def main() -> None:
                     '>
                     <h3 style='color:{severity_color}'>{severity_label}</h3>
                     <p>Estimated GDP change: <strong>{gdp_pred:.2f}%</strong></p>
-                    <p>This conflict is predicted to cause a <em>{severity_label.split()[-1].lower()}</em>
+                    <p>This conflict is predicted to cause a
+                    <em>{severity_label.split()[-1].lower()}</em>
                     economic disruption based on the provided indicators.</p>
                     </div>
                     """,
@@ -422,9 +422,9 @@ def main() -> None:
             make app
             ```
 
-            **Models trained:** XGBoost · LightGBM · Random Forest · Ridge / Logistic Regression  
-            **Tuning:** Optuna (50 trials, XGBoost)  
-            **Tracking:** MLflow @ `http://localhost:5001`  
+            **Models trained:** XGBoost · LightGBM · Random Forest · Ridge / Logistic Regression
+            **Tuning:** Optuna (50 trials, XGBoost)
+            **Tracking:** MLflow @ `http://localhost:5001`
             **Explainability:** SHAP TreeExplainer (global bar + beeswarm)
             """)
 
